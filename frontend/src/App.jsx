@@ -168,6 +168,7 @@ function Empty({ icon, title, desc }) {
 }
 
 export default function App() {
+  const API_URL = "http://localhost:5000";
   const [jobs, setJobs] = useState(starterJobs);
   const [active, setActive] = useState("Find Jobs");
   const [search, setSearch] = useState("");
@@ -221,7 +222,7 @@ export default function App() {
 ];
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/jobs")
+    fetch(`${API_URL}/api/jobs`)
       .then(response =>
         response.ok ? response.json() : Promise.reject()
       )
@@ -235,7 +236,7 @@ export default function App() {
             skills: job.skills || []
           }));
 
-          setJobs([...databaseJobs, ...starterJobs]);
+          setJobs(databaseJobs);
         }
       })
       .catch(error => {
@@ -244,7 +245,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/applications")
+    fetch(`${API_URL}/api/applications`)
       .then(response => {
         if (!response.ok) {
           throw new Error("Unable to fetch applications");
@@ -323,7 +324,7 @@ export default function App() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/upload-resume",
+        API_URL + "/api/upload-resume",
         {
           method: "POST",
           body: formData
@@ -366,7 +367,7 @@ export default function App() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/applications",
+        API_URL + "/api/applications",
         {
           method: "POST",
           headers: {
@@ -406,7 +407,7 @@ export default function App() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/jobs",
+        API_URL + "/api/jobs",
         {
           method: "POST",
           headers: {

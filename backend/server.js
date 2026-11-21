@@ -54,6 +54,7 @@ app.get("/api/jobs",async(req,res)=>{
 app.post("/api/jobs",async(req,res)=>{
   try { const job=await Job.create(req.body); res.status(201).json(job); }
   catch(error){res.status(400).json({message:error.message});}
+  
 });
 app.get("/api/applications",async(req,res)=>{
   try { const items=await Application.find().sort({createdAt:-1});res.json(items); }
@@ -65,9 +66,8 @@ app.post("/api/applications",async(req,res)=>{
     const item=await Application.create(req.body);res.status(201).json(item); }
   catch(error){res.status(400).json({message:error.message});}
 });
-const PORT=process.env.PORT||5000;
-app.post("/api/upload-resume", upload.single("resume"), (req, res) => {
-  // UPDATE JOB
+
+// UPDATE JOB
 app.put("/api/jobs/:id", async (req, res) => {
   try {
     const updatedJob = await Job.findByIdAndUpdate(
@@ -84,12 +84,10 @@ app.put("/api/jobs/:id", async (req, res) => {
       message: "Job updated successfully!",
       job: updatedJob
     });
-
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
-
 
 // DELETE JOB
 app.delete("/api/jobs/:id", async (req, res) => {
@@ -103,14 +101,18 @@ app.delete("/api/jobs/:id", async (req, res) => {
     res.json({
       message: "Job deleted successfully!"
     });
-
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
+
+// RESUME UPLOAD
+app.post("/api/upload-resume", upload.single("resume"), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: "Please select a resume." });
+      return res.status(400).json({
+        message: "Please select a resume."
+      });
     }
 
     res.status(200).json({
@@ -118,14 +120,21 @@ app.delete("/api/jobs/:id", async (req, res) => {
       filename: req.file.filename,
       fileUrl: `/uploads/resumes/${req.file.filename}`
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-if(process.env.MONGO_URI){
+
+const PORT = process.env.PORT || 5000;
+
+if (process.env.MONGO_URI) {
   mongoose.connect(process.env.MONGO_URI)
-    .then(()=>console.log("MongoDB Connected Successfully!"))
-    .catch(err=>console.error("MongoDB connection error:",err.message));
-}else console.log("MONGO_URI not set. Add it in backend/.env");
-app.listen(PORT,()=>console.log(`CareerConnect server running on port ${PORT}`));
+    .then(() => console.log("MongoDB Connected Successfully!"))
+    .catch(err => console.error("MongoDB connection error:", err.message));
+} else {
+  console.log("MONGO_URI not set. Add it in backend/.env");
+}
+
+app.listen(PORT, () => {
+  console.log(`CareerConnect server running on port ${PORT}`);
+});
