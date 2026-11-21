@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "server": "node backend/server.js",
-    "install-all": "npm install && cd backend && npm install"
-  },
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "server": "node backend/server.js",
+  "install-all": "npm install && cd backend && npm install"
+},
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^6.0.5",
