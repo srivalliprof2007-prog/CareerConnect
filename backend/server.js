@@ -2,30 +2,30 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const Job = require("./models/Job");
 const Application = require("./models/Application");
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 const app = express();
 const uploadDir = path.join(__dirname, "uploads", "resumes");
 
 fs.mkdirSync(uploadDir, { recursive: true });
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
 
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
@@ -106,8 +106,9 @@ app.delete("/api/jobs/:id", async (req, res) => {
   }
 });
 
+
 // RESUME UPLOAD
-app.post("/api/upload-resume", upload.single("resume"), (req, res) => {
+app.post("/api/upload-resume", upload.single("resume"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -115,15 +116,33 @@ app.post("/api/upload-resume", upload.single("resume"), (req, res) => {
       });
     }
 
+    const result = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+      {
+        resource_type: "raw",
+        type: "authenticated",
+        folder: "careerconnect/resumes",
+        public_id: `${Date.now()}-${path.parse(req.file.originalname).name}`
+      }
+    );
+
     res.status(200).json({
       message: "Resume uploaded successfully!",
-      filename: req.file.filename,
-      fileUrl: `/uploads/resumes/${req.file.filename}`
+      filename: req.file.originalname,
+      fileUrl: result.secure_url,
+      publicId: result.public_id
     });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Resume upload error:", error);
+
+    res.status(500).json({
+      message: "Resume upload failed.",
+      error: error.message
+    });
   }
 });
+
 
 const PORT = process.env.PORT || 5000;
 
