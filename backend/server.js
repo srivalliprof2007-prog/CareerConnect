@@ -60,11 +60,41 @@ app.get("/api/applications",async(req,res)=>{
   try { const items=await Application.find().sort({createdAt:-1});res.json(items); }
   catch(error){res.status(500).json({message:error.message});}
 });
-app.post("/api/applications",async(req,res)=>{
-  try { 
-    console.log("APPLICATION DATA RECEIVED:", req.body);
-    const item=await Application.create(req.body);res.status(201).json(item); }
-  catch(error){res.status(400).json({message:error.message});}
+app.post("/api/applications", async (req, res) => {
+  try {
+    const { jobId, jobTitle, company, applicantName, applicantEmail } = req.body;
+
+    if (!jobId || !jobTitle || !company || !applicantName || !applicantEmail) {
+      return res.status(400).json({
+        message: "All application details are required."
+      });
+    }
+
+    const email = applicantEmail.trim().toLowerCase();
+
+    const existingApplication = await Application.findOne({
+      jobId,
+      applicantEmail: { $regex: new RegExp("^" + email + "$", "i") }
+    });
+
+    if (existingApplication) {
+      return res.status(409).json({
+        message: "You have already applied for this job."
+      });
+    }
+
+    const item = await Application.create({
+      jobId,
+      jobTitle,
+      company,
+      applicantName,
+      applicantEmail: email
+    });
+
+    res.status(201).json(item);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 });
 
 // UPDATE JOB
