@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 const path = require("path");
@@ -94,6 +95,105 @@ app.post("/api/applications", async (req, res) => {
     res.status(201).json(item);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+
+// REGISTER
+app.post("/api/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "Name, email and password are required."
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must contain at least 6 characters."
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({
+      email: normalizedEmail
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        message: "Email is already registered."
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      password: hashedPassword
+    });
+
+    res.status(201).json({
+      message: "Registration successful!",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// LOGIN
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required."
+      });
+    }
+
+    const user = await User.findOne({
+      email: email.trim().toLowerCase()
+    });
+
+    if (!user || !user.password) {
+      return res.status(401).json({
+        message: "Invalid email or password. Please register again."
+      });
+    }
+
+    const passwordMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!passwordMatch) {
+      return res.status(401).json({
+        message: "Invalid email or password."
+      });
+    }
+
+    res.json({
+      message: "Login successful!",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
