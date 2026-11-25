@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Search, MapPin, BriefcaseBusiness, Bell, FileUp, Menu,
   X, Bookmark, ArrowUpRight, SlidersHorizontal, Plus,
-  CheckCircle2, Sparkles, Clock3, Building2, GraduationCap
+  CheckCircle2, Sparkles
 } from "lucide-react";
 
 const starterJobs = [
@@ -17,7 +17,7 @@ const starterJobs = [
     jobType: "Full-time",
     level: "Fresher",
     posted: "2 days ago",
-    description: "Build responsive interfaces with React, JavaScript and modern CSS. Great opportunity for fresh graduates.",
+    description: "Build responsive interfaces with React, JavaScript and modern CSS.",
     skills: ["React", "JavaScript", "CSS"],
     logo: "P",
     tone: "violet"
@@ -32,7 +32,7 @@ const starterJobs = [
     jobType: "Internship",
     level: "Internship",
     posted: "1 day ago",
-    description: "Work with real datasets, create dashboards and communicate insights to business teams.",
+    description: "Work with real datasets, create dashboards and communicate insights.",
     skills: ["Python", "SQL", "Power BI"],
     logo: "I",
     tone: "mint"
@@ -47,7 +47,7 @@ const starterJobs = [
     jobType: "Full-time",
     level: "Fresher",
     posted: "3 days ago",
-    description: "Create user-friendly product experiences, wireframes and polished visual designs.",
+    description: "Create user-friendly product experiences and visual designs.",
     skills: ["Figma", "Prototyping", "UI Design"],
     logo: "N",
     tone: "peach"
@@ -62,7 +62,7 @@ const starterJobs = [
     jobType: "Full-time",
     level: "1–2 years",
     posted: "4 days ago",
-    description: "Develop REST APIs and backend services using Node.js, Express and MongoDB.",
+    description: "Develop REST APIs using Node.js, Express and MongoDB.",
     skills: ["Node.js", "Express", "MongoDB"],
     logo: "C",
     tone: "blue"
@@ -77,7 +77,7 @@ const starterJobs = [
     jobType: "Internship",
     level: "Internship",
     posted: "5 days ago",
-    description: "Support model experiments, data preparation and evaluation with the applied AI team.",
+    description: "Support model experiments, data preparation and evaluation.",
     skills: ["Python", "ML", "NumPy"],
     logo: "A",
     tone: "yellow"
@@ -92,7 +92,7 @@ const starterJobs = [
     jobType: "Full-time",
     level: "Fresher",
     posted: "1 week ago",
-    description: "Translate business requirements into clear reports, metrics and actionable insights.",
+    description: "Translate business requirements into reports and insights.",
     skills: ["Excel", "SQL", "Communication"],
     logo: "V",
     tone: "pink"
@@ -108,7 +108,6 @@ function JobGrid({ jobs, saved, setSaved, setSelected }) {
             <div className={`company-logo ${job.tone || "violet"}`}>
               {job.logo || job.company?.[0] || "C"}
             </div>
-
             <button
               className={saved.includes(job._id) ? "save-btn saved" : "save-btn"}
               onClick={() =>
@@ -146,7 +145,6 @@ function JobGrid({ jobs, saved, setSaved, setSelected }) {
               <b>{job.salary || "Salary not specified"}</b>
               <small>{job.posted || "Recently posted"}</small>
             </div>
-
             <button className="view-btn" onClick={() => setSelected(job)}>
               View details <ArrowUpRight size={15} />
             </button>
@@ -169,6 +167,7 @@ function Empty({ icon, title, desc }) {
 
 export default function App() {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
   const [jobs, setJobs] = useState(starterJobs);
   const [active, setActive] = useState("Find Jobs");
   const [search, setSearch] = useState("");
@@ -183,6 +182,7 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [applications, setApplications] = useState([]);
+  const [editingJobId, setEditingJobId] = useState(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -213,94 +213,58 @@ export default function App() {
     "AI & ML"
   ];
 
- const nav = [
-  "Find Jobs",
-  "My Applications",
-  "Saved Jobs",
-  "Job Alerts",
-  "Admin Dashboard"
-];
+  const nav = [
+    "Find Jobs",
+    "My Applications",
+    "Saved Jobs",
+    "Job Alerts",
+    "Admin Dashboard"
+  ];
 
   useEffect(() => {
     fetch(`${API_URL}/api/jobs`)
-      .then(response =>
-        response.ok ? response.json() : Promise.reject()
-      )
+      .then(response => {
+        if (!response.ok) throw new Error("Unable to load jobs");
+        return response.json();
+      })
       .then(data => {
         if (Array.isArray(data)) {
-          const databaseJobs = data.map((job, index) => ({
+          setJobs(data.map((job, index) => ({
             ...job,
             logo: (job.company || "C")[0].toUpperCase(),
             tone: ["violet", "mint", "peach", "blue"][index % 4],
             posted: job.posted || "Recently posted",
             skills: job.skills || []
-          }));
-
-          setJobs(databaseJobs);
+          })));
         }
       })
-      .catch(error => {
-        console.log("Unable to load database jobs:", error);
-      });
+      .catch(error => console.log("Unable to load jobs:", error));
   }, []);
 
   useEffect(() => {
     fetch(`${API_URL}/api/applications`)
       .then(response => {
-        if (!response.ok) {
-          throw new Error("Unable to fetch applications");
-        }
+        if (!response.ok) throw new Error("Unable to fetch applications");
         return response.json();
       })
       .then(data => {
-        if (Array.isArray(data)) {
-          setApplications(data);
-        }
+        if (Array.isArray(data)) setApplications(data);
       })
-      .catch(error => {
-        console.log("Unable to load applications:", error);
-      });
+      .catch(error => console.log("Unable to load applications:", error));
   }, []);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("careerconnectEmail");
-
     if (!savedEmail) return;
 
     fetch(`${API_URL}/api/profile/${encodeURIComponent(savedEmail)}`)
       .then(response => {
-        if (!response.ok) {
-          throw new Error("Unable to load profile");
-        }
+        if (!response.ok) throw new Error("Unable to load profile");
         return response.json();
       })
-      .then(data => {
-        setCandidate(data);
-      })
-      .catch(error => {
-        console.log("Unable to load saved profile:", error);
-      });
+      .then(data => setCandidate(data))
+      .catch(error => console.log("Unable to load profile:", error));
   }, []);
-
-useEffect(() => {
-  const savedEmail = localStorage.getItem("careerconnectEmail");
-
-  if (!savedEmail) return;
-
-  fetch(`${API_URL}/api/profile/${encodeURIComponent(savedEmail)}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Unable to load profile");
-      }
-      return response.json();
-    })
-    .then(data => {
-      setCandidate(data);
-    })
-    .catch(error => {
-      console.log("Unable to load saved profile:", error);
-    });
-}, []);
 
   const filtered = useMemo(() => {
     return jobs.filter(j => {
@@ -323,7 +287,6 @@ useEffect(() => {
 
   const savedJobs = jobs.filter(job => saved.includes(job._id));
 
-
   const matchingAlerts = jobs.filter(job =>
     (candidate.preferredCategory === "All categories" ||
       job.category === candidate.preferredCategory) &&
@@ -340,9 +303,21 @@ useEffect(() => {
     window.setTimeout(() => setToast(""), 2600);
   }
 
+  function resetJobForm() {
+    setForm({
+      title: "",
+      company: "",
+      location: "",
+      category: "Development",
+      salary: "",
+      jobType: "Full-time",
+      description: ""
+    });
+    setEditingJobId(null);
+  }
+
   async function handleResumeUpload(event) {
     const file = event.target.files?.[0];
-
     if (!file) return;
 
     const allowedExtensions = ["pdf", "doc", "docx"];
@@ -364,19 +339,13 @@ useEffect(() => {
     formData.append("resume", file);
 
     try {
-      const response = await fetch(
-        API_URL + "/api/upload-resume",
-        {
-          method: "POST",
-          body: formData
-        }
-      );
+      const response = await fetch(API_URL + "/api/upload-resume", {
+        method: "POST",
+        body: formData
+      });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Upload failed");
-      }
+      if (!response.ok) throw new Error(data.message || "Upload failed");
 
       setResume(file.name);
       notify("Resume uploaded successfully!");
@@ -393,9 +362,11 @@ useEffect(() => {
       notify("Please enter your name and email first.");
       return;
     }
-    console.log("Selected job:", job.title, job._id);
-    console.log("Saved applications:", applications);
-    if (applications.some(a => a.jobId === job._id)) {
+
+    if (applications.some(a =>
+      a.jobId === job._id &&
+      a.applicantEmail?.toLowerCase() === candidate.email.toLowerCase()
+    )) {
       return notify("You have already applied for this job.");
     }
 
@@ -408,157 +379,184 @@ useEffect(() => {
     };
 
     try {
-      const response = await fetch(
-        API_URL + "/api/applications",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(applicant)
-        }
-      );
+      const response = await fetch(API_URL + "/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(applicant)
+      });
 
-      if (!response.ok) {
-        throw new Error("Application submission failed");
-      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Application failed");
 
-      const savedApplication = await response.json();
-
-      setApplications(a => [...a, savedApplication]);
+      setApplications(a => [...a, data]);
       setSelected(null);
       notify("Application submitted successfully!");
     } catch (error) {
       console.error(error);
-      notify("Unable to submit application. Please try again.");
+      notify(error.message || "Unable to submit application.");
     }
   }
 
-async function postJob(e) {
-  e.preventDefault();
+  async function saveJob(e) {
+    e.preventDefault();
 
-  const item = {
-    ...form,
-    _id: "local-" + Date.now(),
-    logo: (form.company || "C")[0].toUpperCase(),
-    tone: "violet",
-    posted: "Just now",
-    level: "Open to applicants",
-    skills: []
-  };
+    try {
+      if (editingJobId) {
+        const response = await fetch(
+          `${API_URL}/api/jobs/${editingJobId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(form)
+          }
+        );
 
-  try {
-    const response = await fetch(
-      API_URL + "/api/jobs",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(form)
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Update failed");
+
+        const updatedJob = data.job || data;
+        setJobs(current =>
+          current.map(job =>
+            job._id === editingJobId
+              ? {
+                  ...job,
+                  ...updatedJob,
+                  logo: (updatedJob.company || "C")[0].toUpperCase()
+                }
+              : job
+          )
+        );
+
+        notify("Job updated successfully!");
+      } else {
+        const response = await fetch(API_URL + "/api/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form)
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Job posting failed");
+
+        const newJob = {
+          ...data,
+          logo: (data.company || "C")[0].toUpperCase(),
+          tone: "violet",
+          posted: "Just now",
+          skills: data.skills || []
+        };
+
+        setJobs(current => [newJob, ...current]);
+
+        const normalize = value =>
+          String(value || "").trim().toLowerCase();
+
+        const categoryMatches =
+          !candidate.preferredCategory ||
+          normalize(candidate.preferredCategory) === "all categories" ||
+          normalize(newJob.category) === normalize(candidate.preferredCategory);
+
+        const locationMatches =
+          !candidate.preferredLocation ||
+          normalize(newJob.location).includes(
+            normalize(candidate.preferredLocation)
+          );
+
+        const typeMatches =
+          !candidate.preferredType ||
+          normalize(candidate.preferredType) === "all types" ||
+          normalize(newJob.jobType) === normalize(candidate.preferredType);
+
+        if (categoryMatches && locationMatches && typeMatches) {
+          notify(`New Job Alert! ${newJob.title} at ${newJob.company} matches your preferences.`);
+        } else {
+          notify("Your job listing has been added.");
+        }
       }
-    );
 
-    if (response.ok) {
-      const savedJob = await response.json();
+      setShowPost(false);
+      resetJobForm();
+    } catch (error) {
+      console.error("Job save error:", error);
+      notify(error.message || "Unable to save job.");
+    }
+  }
 
-      Object.assign(item, savedJob, {
-        logo: (savedJob.company || "C")[0].toUpperCase(),
-        tone: "violet",
-        posted: "Just now",
-        skills: savedJob.skills || []
-      });
-    } else {
-      notify("Job could not be saved to the database.");
+  async function deleteJob(jobId) {
+    if (!/^[0-9a-fA-F]{24}$/.test(String(jobId))) {
+      notify("This sample job cannot be deleted from the database.");
       return;
     }
-  } catch (error) {
-    console.error(error);
-    notify("Unable to connect to the server.");
-    return;
+
+    if (!window.confirm("Are you sure you want to delete this job?")) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/jobs/${jobId}`, {
+        method: "DELETE"
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Delete failed");
+
+      setJobs(current => current.filter(job => job._id !== jobId));
+      setSaved(current => current.filter(id => id !== jobId));
+      notify("Job deleted successfully!");
+    } catch (error) {
+      console.error("Delete job error:", error);
+      notify(error.message || "Unable to delete job.");
+    }
   }
 
-const normalize = value =>
-  String(value || "").trim().toLowerCase();
-
-const categoryMatches =
-  !candidate.preferredCategory ||
-  normalize(candidate.preferredCategory) === "all categories" ||
-  normalize(item.category) === normalize(candidate.preferredCategory);
-
-const locationMatches =
-  !candidate.preferredLocation ||
-  normalize(item.location).includes(
-    normalize(candidate.preferredLocation)
-  );
-
-const typeMatches =
-  !candidate.preferredType ||
-  normalize(candidate.preferredType) === "all types" ||
-  normalize(item.jobType) === normalize(candidate.preferredType);
-
-const jobMatchesPreferences =
-  categoryMatches && locationMatches && typeMatches;
-
-  setJobs(j => [item, ...j]);
-  setShowPost(false);
-
-  setForm({
-    title: "",
-    company: "",
-    location: "",
-    category: "Development",
-    salary: "",
-    jobType: "Full-time",
-    description: ""
-  });
-
-  if (jobMatchesPreferences) {
-    notify(
-      `New Job Alert! ${item.title} at ${item.company} matches your preferences.`
-    );
-  } else {
-    notify("Your job listing has been added.");
-  }
-}
-
-async function saveProfile(e) {
-  e.preventDefault();
-
-  if (!candidate.name.trim() || !candidate.email.trim()) {
-    notify("Name and email are required.");
-    return;
-  }
-
-  try {
-    const response = await fetch(API_URL + "/api/profile", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(candidate)
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Unable to save profile.");
+  function editJob(job) {
+    if (!/^[0-9a-fA-F]{24}$/.test(String(job._id))) {
+      notify("Only database jobs can be edited.");
+      return;
     }
 
-  localStorage.setItem("careerconnectEmail", data.user.email);
-setCandidate(data.user);
-setShowProfile(false);
-    notify("Profile saved successfully!");
-  } catch (error) {
-    console.error("Profile save error:", error);
-    notify(error.message || "Unable to save profile.");
-  }
-}
+    setForm({
+      title: job.title || "",
+      company: job.company || "",
+      location: job.location || "",
+      category: job.category || "Development",
+      salary: job.salary || "",
+      jobType: job.jobType || "Full-time",
+      description: job.description || ""
+    });
 
+    setEditingJobId(job._id);
+    setShowPost(true);
+  }
+
+  async function saveProfile(e) {
+    e.preventDefault();
+
+    if (!candidate.name.trim() || !candidate.email.trim()) {
+      notify("Name and email are required.");
+      return;
+    }
+
+    try {
+      const response = await fetch(API_URL + "/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(candidate)
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to save profile.");
+
+      localStorage.setItem("careerconnectEmail", data.user.email);
+      setCandidate(data.user);
+      setShowProfile(false);
+      notify("Profile saved successfully!");
+    } catch (error) {
+      console.error("Profile save error:", error);
+      notify(error.message || "Unable to save profile.");
+    }
+  }
 
   return (
     <div className="app-shell">
-
       <header className="topbar">
         <a
           className="brand"
@@ -571,9 +569,7 @@ setShowProfile(false);
           <span className="brand-mark">
             <BriefcaseBusiness size={20} />
           </span>
-          <span>
-            career<span className="brand-accent">connect</span>
-          </span>
+          <span>career<span className="brand-accent">connect</span></span>
         </a>
 
         <nav className="desktop-nav">
@@ -589,7 +585,13 @@ setShowProfile(false);
         </nav>
 
         <div className="top-actions">
-          <button className="post-btn" onClick={() => setShowPost(true)}>
+          <button
+            className="post-btn"
+            onClick={() => {
+              resetJobForm();
+              setShowPost(true);
+            }}
+          >
             <Plus size={17} /> Post a job
           </button>
 
@@ -598,8 +600,7 @@ setShowProfile(false);
             aria-label="Notifications"
             onClick={() => notify("You're all caught up!")}
           >
-            <Bell size={19} />
-            <i />
+            <Bell size={19} /><i />
           </button>
 
           <button className="avatar" onClick={() => setShowProfile(true)}>
@@ -632,7 +633,6 @@ setShowProfile(false);
       )}
 
       <main>
-
         <section className="hero">
           <div className="hero-copy">
             <div className="eyebrow">
@@ -683,9 +683,7 @@ setShowProfile(false);
               </div>
 
               <div className="art-lines">
-                <i />
-                <i />
-                <i />
+                <i /><i /><i />
               </div>
 
               <div className="art-mini">
@@ -697,20 +695,14 @@ setShowProfile(false);
               <span className="tag-icon purple">
                 <BriefcaseBusiness size={16} />
               </span>
-              <span>
-                <b>Dream job</b>
-                <small>Within reach</small>
-              </span>
+              <span><b>Dream job</b><small>Within reach</small></span>
             </div>
 
             <div className="floating-tag tag-two">
               <span className="tag-icon green">
                 <CheckCircle2 size={16} />
               </span>
-              <span>
-                <b>Application sent</b>
-                <small>You're on your way!</small>
-              </span>
+              <span><b>Application sent</b><small>You're on your way!</small></span>
             </div>
 
             <div className="sparkle s1">✦</div>
@@ -748,11 +740,9 @@ setShowProfile(false);
         </section>
 
         <div className="content-layout">
-
           <aside className="sidebar">
             <div className="side-heading">
               <SlidersHorizontal size={17} /> Filters
-
               <button
                 onClick={() => {
                   setCategory("All categories");
@@ -767,23 +757,16 @@ setShowProfile(false);
 
             <div className="filter-group">
               <h4>Job category</h4>
-
               {categories.map((c, i) => (
                 <button
                   key={c}
-                  className={
-                    category === c
-                      ? "filter-option chosen"
-                      : "filter-option"
-                  }
+                  className={category === c ? "filter-option chosen" : "filter-option"}
                   onClick={() => setCategory(c)}
                 >
                   <span className="radio-dot" />
                   {c}
                   <span className="filter-count">
-                    {i === 0
-                      ? jobs.length
-                      : jobs.filter(j => j.category === c).length}
+                    {i === 0 ? jobs.length : jobs.filter(j => j.category === c).length}
                   </span>
                 </button>
               ))}
@@ -791,31 +774,21 @@ setShowProfile(false);
 
             <div className="filter-group">
               <h4>Employment type</h4>
-
               {["All types", "Full-time", "Part-time", "Internship", "Contract"].map(t => (
                 <button
                   key={t}
-                  className={
-                    type === t
-                      ? "filter-option chosen"
-                      : "filter-option"
-                  }
+                  className={type === t ? "filter-option chosen" : "filter-option"}
                   onClick={() => setType(t)}
                 >
-                  <span className="radio-dot" />
-                  {t}
+                  <span className="radio-dot" />{t}
                 </button>
               ))}
             </div>
 
             <div className="sidebar-tip">
-              <div className="tip-icon">
-                <Bell size={17} />
-              </div>
+              <div className="tip-icon"><Bell size={17} /></div>
               <b>Stay in the loop</b>
-              <p>
-                Get notified when jobs matching your interests are posted.
-              </p>
+              <p>Get notified when jobs matching your interests are posted.</p>
               <button
                 onClick={() => {
                   setActive("Job Alerts");
@@ -828,19 +801,14 @@ setShowProfile(false);
           </aside>
 
           <section className="jobs-area">
-
             <div className="section-heading">
               <div>
                 <div className="eyebrow dark-eyebrow">
                   OPPORTUNITIES FOR YOU
                 </div>
-
                 <h2>
-                  {active === "Find Jobs"
-                    ? "Explore open positions"
-                    : active}
+                  {active === "Find Jobs" ? "Explore open positions" : active}
                 </h2>
-
                 <p>
                   {active === "Find Jobs"
                     ? "Find the role where your potential meets opportunity."
@@ -848,17 +816,21 @@ setShowProfile(false);
                     ? "Keep track of the opportunities you've applied to."
                     : active === "Saved Jobs"
                     ? "Your bookmarked opportunities, all in one place."
-                    : "Never miss an opportunity that matches your goals."}
+                    : active === "Job Alerts"
+                    ? "Never miss an opportunity that matches your goals."
+                    : "Manage jobs and monitor candidate activity."}
                 </p>
               </div>
 
-              <div className="sort-label">
-                <span>Sort by</span>
-                <select aria-label="Sort jobs">
-                  <option>Most relevant</option>
-                  <option>Newest first</option>
-                </select>
-              </div>
+              {active !== "Admin Dashboard" && (
+                <div className="sort-label">
+                  <span>Sort by</span>
+                  <select aria-label="Sort jobs">
+                    <option>Most relevant</option>
+                    <option>Newest first</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {active === "Find Jobs" && (
@@ -903,18 +875,12 @@ setShowProfile(false);
                       <div className="company-logo violet">
                         {(app.company || "C")[0]}
                       </div>
-
                       <div>
                         <h3>{app.jobTitle}</h3>
                         <p>{app.company}</p>
-                        <small>
-                          Applicant: {app.applicantName}
-                        </small>
+                        <small>Applicant: {app.applicantName}</small>
                       </div>
-
-                      <span className="application-status">
-                        Submitted
-                      </span>
+                      <span className="application-status">Submitted</span>
                     </div>
                   ))}
                 </div>
@@ -929,20 +895,14 @@ setShowProfile(false);
 
             {active === "Job Alerts" && (
               <div className="alert-card">
-                <div className="alert-symbol">
-                  <Bell />
-                </div>
-
+                <div className="alert-symbol"><Bell /></div>
                 <div>
                   <h3>Make opportunities come to you</h3>
-
                   <p>
-                    Your current preferences:
-                    {" "}{candidate.preferredCategory},
+                    Your current preferences: {candidate.preferredCategory},
                     {" "}{candidate.preferredLocation || "Any location"},
                     {" "}{candidate.preferredType}
                   </p>
-
                   <button
                     className="primary-btn"
                     onClick={() => setShowProfile(true)}
@@ -951,7 +911,6 @@ setShowProfile(false);
                   </button>
 
                   <h3>Matching jobs ({matchingAlerts.length})</h3>
-
                   {matchingAlerts.length > 0 ? (
                     <JobGrid
                       jobs={matchingAlerts}
@@ -960,84 +919,105 @@ setShowProfile(false);
                       setSelected={setSelected}
                     />
                   ) : (
-                    <p>
-                      No matching jobs currently. Try changing your preferences.
-                    </p>
+                    <p>No matching jobs currently. Try changing your preferences.</p>
                   )}
                 </div>
               </div>
             )}
-                      {active === "Admin Dashboard" && (
-              <div className="admin-dashboard">
 
-                <div className="eyebrow dark-eyebrow">
-                  ADMINISTRATION
+            {active === "Admin Dashboard" && (
+              <div className="admin-dashboard">
+                <div className="admin-heading">
+                  <div>
+                    <div className="eyebrow dark-eyebrow">ADMINISTRATION</div>
+                    <h2>Admin Dashboard</h2>
+                    <p>Manage jobs and monitor candidate activity.</p>
+                  </div>
+                  <button
+                    className="post-btn"
+                    onClick={() => {
+                      resetJobForm();
+                      setShowPost(true);
+                    }}
+                  >
+                    <Plus size={17} /> Post New Job
+                  </button>
                 </div>
 
-                <h2>Admin Dashboard</h2>
-
-                <p>
-                  Manage jobs and monitor candidate applications.
-                </p>
-
                 <div className="admin-stats">
-
                   <div className="admin-stat-card">
                     <BriefcaseBusiness size={25} />
                     <h3>Total Jobs</h3>
                     <strong>{jobs.length}</strong>
                   </div>
-
                   <div className="admin-stat-card">
                     <FileUp size={25} />
                     <h3>Total Applications</h3>
                     <strong>{applications.length}</strong>
-                                  <div className="admin-job-management">
-
-                  <h3>Manage Job Listings</h3>
-
-                  <p>View all jobs available on CareerConnect.</p>
-
-                  <div className="admin-job-list">
-
-                    {jobs.map(job => (
-                      <div className="admin-job-row" key={job._id}>
-
-                        <div>
-                          <h4>{job.title}</h4>
-                          <p>{job.company}</p>
-                          <small>
-                            {job.location} | {job.jobType}
-                          </small>
-                        </div>
-
-                        <span className="admin-job-category">
-                          {job.category}
-                        </span>
-                                              { /^[0-9a-fA-F]{24}$/.test(String(job._id)) && (
-                          <button
-                            className="admin-delete-btn"
-                            onClick={() => deleteJob(job._id)}
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    ))}
-
                   </div>
-
-                </div>
-                  </div>
-
                   <div className="admin-stat-card">
                     <Bookmark size={25} />
                     <h3>Saved Jobs</h3>
-                    <strong>{saved.length}</strong>
+                    <strong>{savedJobs.length}</strong>
                   </div>
-
                 </div>
 
+                <div className="admin-job-management">
+                  <div className="admin-management-heading">
+                    <div>
+                      <h3>Job Management</h3>
+                      <p>View and manage all job listings on CareerConnect.</p>
+                    </div>
+                    <span className="admin-job-count">
+                      {jobs.length} Jobs
+                    </span>
+                  </div>
+
+                  <div className="admin-job-list">
+                    {jobs.length === 0 ? (
+                      <p className="admin-empty">No job listings available yet.</p>
+                    ) : (
+                      jobs.map(job => (
+                        <div className="admin-job-row" key={job._id}>
+                          <div className="admin-job-info">
+                            <h4>{job.title}</h4>
+                            <p>{job.company}</p>
+                            <small>{job.location} | {job.jobType}</small>
+                          </div>
+
+                          <span className="admin-job-category">
+                            {job.category}
+                          </span>
+
+                          <div className="admin-job-actions">
+                            <button
+                              className="admin-view-btn"
+                              onClick={() => setSelected(job)}
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className="admin-edit-btn"
+                              onClick={() => editJob(job)}
+                              disabled={!/^[0-9a-fA-F]{24}$/.test(String(job._id))}
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              className="admin-delete-btn"
+                              onClick={() => deleteJob(job._id)}
+                              disabled={!/^[0-9a-fA-F]{24}$/.test(String(job._id))}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </section>
@@ -1055,10 +1035,7 @@ setShowProfile(false);
               <X />
             </button>
 
-            <div className="eyebrow dark-eyebrow">
-              JOB DETAILS
-            </div>
-
+            <div className="eyebrow dark-eyebrow">JOB DETAILS</div>
             <h2>{selected.title}</h2>
             <p>{selected.company}</p>
 
@@ -1102,12 +1079,8 @@ setShowProfile(false);
               <X />
             </button>
 
-            <div className="eyebrow dark-eyebrow">
-              YOUR CAREER PROFILE
-            </div>
-
+            <div className="eyebrow dark-eyebrow">YOUR CAREER PROFILE</div>
             <h2>Build your profile</h2>
-
             <p className="form-intro">
               Help employers understand what makes you a great candidate.
             </p>
@@ -1117,9 +1090,7 @@ setShowProfile(false);
                 Full name
                 <input
                   value={candidate.name}
-                  onChange={e =>
-                    setCandidate({ ...candidate, name: e.target.value })
-                  }
+                  onChange={e => setCandidate({ ...candidate, name: e.target.value })}
                   placeholder="Your name"
                   required
                 />
@@ -1130,9 +1101,7 @@ setShowProfile(false);
                 <input
                   type="email"
                   value={candidate.email}
-                  onChange={e =>
-                    setCandidate({ ...candidate, email: e.target.value })
-                  }
+                  onChange={e => setCandidate({ ...candidate, email: e.target.value })}
                   placeholder="you@example.com"
                   required
                 />
@@ -1142,9 +1111,7 @@ setShowProfile(false);
                 Phone number
                 <input
                   value={candidate.phone}
-                  onChange={e =>
-                    setCandidate({ ...candidate, phone: e.target.value })
-                  }
+                  onChange={e => setCandidate({ ...candidate, phone: e.target.value })}
                   placeholder="Mobile number"
                 />
               </label>
@@ -1153,9 +1120,7 @@ setShowProfile(false);
                 College / University
                 <input
                   value={candidate.college}
-                  onChange={e =>
-                    setCandidate({ ...candidate, college: e.target.value })
-                  }
+                  onChange={e => setCandidate({ ...candidate, college: e.target.value })}
                   placeholder="Your institution"
                 />
               </label>
@@ -1164,9 +1129,7 @@ setShowProfile(false);
                 Skills
                 <input
                   value={candidate.skills}
-                  onChange={e =>
-                    setCandidate({ ...candidate, skills: e.target.value })
-                  }
+                  onChange={e => setCandidate({ ...candidate, skills: e.target.value })}
                   placeholder="React, Python, SQL..."
                 />
               </label>
@@ -1175,16 +1138,12 @@ setShowProfile(false);
                 Preferred job category
                 <select
                   value={candidate.preferredCategory}
-                  onChange={e =>
-                    setCandidate({
-                      ...candidate,
-                      preferredCategory: e.target.value
-                    })
-                  }
+                  onChange={e => setCandidate({
+                    ...candidate,
+                    preferredCategory: e.target.value
+                  })}
                 >
-                  {categories.map(c => (
-                    <option key={c}>{c}</option>
-                  ))}
+                  {categories.map(c => <option key={c}>{c}</option>)}
                 </select>
               </label>
 
@@ -1192,12 +1151,10 @@ setShowProfile(false);
                 Preferred location
                 <input
                   value={candidate.preferredLocation}
-                  onChange={e =>
-                    setCandidate({
-                      ...candidate,
-                      preferredLocation: e.target.value
-                    })
-                  }
+                  onChange={e => setCandidate({
+                    ...candidate,
+                    preferredLocation: e.target.value
+                  })}
                   placeholder="Any location or enter a city"
                 />
               </label>
@@ -1206,12 +1163,10 @@ setShowProfile(false);
                 Preferred employment type
                 <select
                   value={candidate.preferredType}
-                  onChange={e =>
-                    setCandidate({
-                      ...candidate,
-                      preferredType: e.target.value
-                    })
-                  }
+                  onChange={e => setCandidate({
+                    ...candidate,
+                    preferredType: e.target.value
+                  })}
                 >
                   {["All types", "Full-time", "Part-time", "Internship", "Contract"].map(t => (
                     <option key={t}>{t}</option>
@@ -1221,23 +1176,16 @@ setShowProfile(false);
 
               <label className="full-field upload-box">
                 <FileUp size={20} />
-
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx"
                   onChange={handleResumeUpload}
                 />
-
-                <span>
-                  {resume || "Upload your resume (PDF or DOC)"}
-                </span>
+                <span>{resume || "Upload your resume (PDF or DOC)"}</span>
               </label>
             </div>
 
-            <button
-              className="primary-btn submit-btn"
-              type="submit"
-            >
+            <button className="primary-btn submit-btn" type="submit">
               Save profile <CheckCircle2 size={16} />
             </button>
           </form>
@@ -1246,23 +1194,24 @@ setShowProfile(false);
 
       {showPost && (
         <div className="modal-backdrop">
-          <form className="modal form-modal" onSubmit={postJob}>
+          <form className="modal form-modal" onSubmit={saveJob}>
             <button
               type="button"
               className="close-btn"
-              onClick={() => setShowPost(false)}
+              onClick={() => {
+                setShowPost(false);
+                resetJobForm();
+              }}
             >
               <X />
             </button>
 
-            <div className="eyebrow dark-eyebrow">
-              RECRUITER PORTAL
-            </div>
-
-            <h2>Post a new job</h2>
-
+            <div className="eyebrow dark-eyebrow">RECRUITER PORTAL</div>
+            <h2>{editingJobId ? "Edit job listing" : "Post a new job"}</h2>
             <p className="form-intro">
-              Share an opportunity with talented candidates.
+              {editingJobId
+                ? "Update the job details below."
+                : "Share an opportunity with talented candidates."}
             </p>
 
             <div className="form-grid">
@@ -1271,9 +1220,7 @@ setShowProfile(false);
                 <input
                   required
                   value={form.title}
-                  onChange={e =>
-                    setForm({ ...form, title: e.target.value })
-                  }
+                  onChange={e => setForm({ ...form, title: e.target.value })}
                   placeholder="e.g. Python Developer"
                 />
               </label>
@@ -1283,9 +1230,7 @@ setShowProfile(false);
                 <input
                   required
                   value={form.company}
-                  onChange={e =>
-                    setForm({ ...form, company: e.target.value })
-                  }
+                  onChange={e => setForm({ ...form, company: e.target.value })}
                   placeholder="Company name"
                 />
               </label>
@@ -1295,9 +1240,7 @@ setShowProfile(false);
                 <input
                   required
                   value={form.location}
-                  onChange={e =>
-                    setForm({ ...form, location: e.target.value })
-                  }
+                  onChange={e => setForm({ ...form, location: e.target.value })}
                   placeholder="City or Remote"
                 />
               </label>
@@ -1305,15 +1248,10 @@ setShowProfile(false);
               <label>
                 Category
                 <select
-
                   value={form.category}
-                  onChange={e =>
-                    setForm({ ...form, category: e.target.value })
-                  }
+                  onChange={e => setForm({ ...form, category: e.target.value })}
                 >
-                  {categories.slice(1).map(c => (
-                    <option key={c}>{c}</option>
-                  ))}
+                  {categories.slice(1).map(c => <option key={c}>{c}</option>)}
                 </select>
               </label>
 
@@ -1321,9 +1259,7 @@ setShowProfile(false);
                 Salary
                 <input
                   value={form.salary}
-                  onChange={e =>
-                    setForm({ ...form, salary: e.target.value })
-                  }
+                  onChange={e => setForm({ ...form, salary: e.target.value })}
                   placeholder="e.g. 4-6 LPA"
                 />
               </label>
@@ -1332,9 +1268,7 @@ setShowProfile(false);
                 Employment type
                 <select
                   value={form.jobType}
-                  onChange={e =>
-                    setForm({ ...form, jobType: e.target.value })
-                  }
+                  onChange={e => setForm({ ...form, jobType: e.target.value })}
                 >
                   {["Full-time", "Part-time", "Internship", "Contract"].map(t => (
                     <option key={t}>{t}</option>
@@ -1347,19 +1281,15 @@ setShowProfile(false);
                 <textarea
                   required
                   value={form.description}
-                  onChange={e =>
-                    setForm({ ...form, description: e.target.value })
-                  }
+                  onChange={e => setForm({ ...form, description: e.target.value })}
                   placeholder="Describe the job role and responsibilities..."
                 />
               </label>
             </div>
 
-            <button
-              className="primary-btn submit-btn"
-              type="submit"
-            >
-              Publish job <Plus size={16} />
+            <button className="primary-btn submit-btn" type="submit">
+              {editingJobId ? "Save Changes" : "Publish job"}
+              <CheckCircle2 size={16} />
             </button>
           </form>
         </div>
@@ -1371,7 +1301,6 @@ setShowProfile(false);
           {toast}
         </div>
       )}
-
     </div>
   );
 }

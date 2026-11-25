@@ -54,7 +54,7 @@ app.get("/api/jobs",async(req,res)=>{
 app.post("/api/jobs",async(req,res)=>{
   try { const job=await Job.create(req.body); res.status(201).json(job); }
   catch(error){res.status(400).json({message:error.message});}
-  
+
 });
 app.get("/api/applications",async(req,res)=>{
   try { const items=await Application.find().sort({createdAt:-1});res.json(items); }
