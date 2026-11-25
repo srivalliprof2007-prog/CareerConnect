@@ -8,7 +8,7 @@ const path = require("path");
 const fs = require("fs");
 const Job = require("./models/Job");
 const Application = require("./models/Application");
-
+const User = require("./models/User");
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -106,6 +106,72 @@ app.delete("/api/jobs/:id", async (req, res) => {
   }
 });
 
+
+// STUDENT PROFILE - GET
+app.get("/api/profile/:email", async (req, res) => {
+  try {
+    const email = req.params.email.trim().toLowerCase();
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Profile not found"
+      });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+});
+
+// STUDENT PROFILE - SAVE OR UPDATE
+app.put("/api/profile", async (req, res) => {
+  try {
+    const profile = req.body;
+
+    if (!profile.name?.trim() || !profile.email?.trim()) {
+      return res.status(400).json({
+        message: "Name and email are required."
+      });
+    }
+
+    const email = profile.email.trim().toLowerCase();
+
+    const savedUser = await User.findOneAndUpdate(
+      { email },
+      {
+        name: profile.name.trim(),
+        email,
+        phone: profile.phone || "",
+        college: profile.college || "",
+        skills: profile.skills || "",
+        preferredCategory:
+          profile.preferredCategory || "All categories",
+        preferredLocation: profile.preferredLocation || "",
+        preferredType: profile.preferredType || "All types"
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true
+      }
+    );
+
+    res.status(200).json({
+      message: "Profile saved successfully!",
+      user: savedUser
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message
+    });
+  }
+});
 
 // RESUME UPLOAD
 app.post("/api/upload-resume", upload.single("resume"), async (req, res) => {

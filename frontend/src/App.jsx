@@ -262,6 +262,46 @@ export default function App() {
       });
   }, []);
 
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("careerconnectEmail");
+
+    if (!savedEmail) return;
+
+    fetch(`${API_URL}/api/profile/${encodeURIComponent(savedEmail)}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Unable to load profile");
+        }
+        return response.json();
+      })
+      .then(data => {
+        setCandidate(data);
+      })
+      .catch(error => {
+        console.log("Unable to load saved profile:", error);
+      });
+  }, []);
+
+useEffect(() => {
+  const savedEmail = localStorage.getItem("careerconnectEmail");
+
+  if (!savedEmail) return;
+
+  fetch(`${API_URL}/api/profile/${encodeURIComponent(savedEmail)}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Unable to load profile");
+      }
+      return response.json();
+    })
+    .then(data => {
+      setCandidate(data);
+    })
+    .catch(error => {
+      console.log("Unable to load saved profile:", error);
+    });
+}, []);
+
   const filtered = useMemo(() => {
     return jobs.filter(j => {
       const q = search.toLowerCase();
@@ -352,7 +392,8 @@ export default function App() {
       notify("Please enter your name and email first.");
       return;
     }
-
+    console.log("Selected job:", job.title, job._id);
+    console.log("Saved applications:", applications);
     if (applications.some(a => a.jobId === job._id)) {
       return notify("You have already applied for this job.");
     }
@@ -451,11 +492,40 @@ export default function App() {
     notify("Your job listing has been added.");
   }
 
-  function saveProfile(e) {
-    e.preventDefault();
-    setShowProfile(false);
-    notify("Profile and job alert preferences saved!");
+  
+async function saveProfile(e) {
+  e.preventDefault();
+
+  if (!candidate.name.trim() || !candidate.email.trim()) {
+    notify("Name and email are required.");
+    return;
   }
+
+  try {
+    const response = await fetch(API_URL + "/api/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(candidate)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Unable to save profile.");
+    }
+
+  localStorage.setItem("careerconnectEmail", data.user.email);
+setCandidate(data.user);
+setShowProfile(false);
+    notify("Profile saved successfully!");
+  } catch (error) {
+    console.error("Profile save error:", error);
+    notify(error.message || "Unable to save profile.");
+  }
+}
+
 
   return (
     <div className="app-shell">
