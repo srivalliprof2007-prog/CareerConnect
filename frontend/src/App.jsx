@@ -323,6 +323,7 @@ useEffect(() => {
 
   const savedJobs = jobs.filter(job => saved.includes(job._id));
 
+
   const matchingAlerts = jobs.filter(job =>
     (candidate.preferredCategory === "All categories" ||
       job.category === candidate.preferredCategory) &&
@@ -433,66 +434,94 @@ useEffect(() => {
     }
   }
 
-  async function postJob(e) {
-    e.preventDefault();
+async function postJob(e) {
+  e.preventDefault();
 
-    const item = {
-      ...form,
-      _id: "local-" + Date.now(),
-      logo: (form.company || "C")[0].toUpperCase(),
-      tone: "violet",
-      posted: "Just now",
-      level: "Open to applicants",
-      skills: []
-    };
+  const item = {
+    ...form,
+    _id: "local-" + Date.now(),
+    logo: (form.company || "C")[0].toUpperCase(),
+    tone: "violet",
+    posted: "Just now",
+    level: "Open to applicants",
+    skills: []
+  };
 
-    try {
-      const response = await fetch(
-        API_URL + "/api/jobs",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(form)
-        }
-      );
-
-      if (response.ok) {
-        const savedJob = await response.json();
-        Object.assign(item, savedJob, {
-          logo: (savedJob.company || "C")[0].toUpperCase(),
-          tone: "violet",
-          posted: "Just now",
-          skills: savedJob.skills || []
-        });
-      } else {
-        notify("Job could not be saved to the database.");
-        return;
+  try {
+    const response = await fetch(
+      API_URL + "/api/jobs",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(form)
       }
-    } catch (error) {
-      console.error(error);
-      notify("Unable to connect to the server.");
+    );
+
+    if (response.ok) {
+      const savedJob = await response.json();
+
+      Object.assign(item, savedJob, {
+        logo: (savedJob.company || "C")[0].toUpperCase(),
+        tone: "violet",
+        posted: "Just now",
+        skills: savedJob.skills || []
+      });
+    } else {
+      notify("Job could not be saved to the database.");
       return;
     }
-
-    setJobs(j => [item, ...j]);
-    setShowPost(false);
-
-    setForm({
-      title: "",
-      company: "",
-      location: "",
-      category: "Development",
-      salary: "",
-      jobType: "Full-time",
-      description: ""
-    });
-
-    notify("Your job listing has been added.");
+  } catch (error) {
+    console.error(error);
+    notify("Unable to connect to the server.");
+    return;
   }
 
-  
+const normalize = value =>
+  String(value || "").trim().toLowerCase();
+
+const categoryMatches =
+  !candidate.preferredCategory ||
+  normalize(candidate.preferredCategory) === "all categories" ||
+  normalize(item.category) === normalize(candidate.preferredCategory);
+
+const locationMatches =
+  !candidate.preferredLocation ||
+  normalize(item.location).includes(
+    normalize(candidate.preferredLocation)
+  );
+
+const typeMatches =
+  !candidate.preferredType ||
+  normalize(candidate.preferredType) === "all types" ||
+  normalize(item.jobType) === normalize(candidate.preferredType);
+
+const jobMatchesPreferences =
+  categoryMatches && locationMatches && typeMatches;
+
+  setJobs(j => [item, ...j]);
+  setShowPost(false);
+
+  setForm({
+    title: "",
+    company: "",
+    location: "",
+    category: "Development",
+    salary: "",
+    jobType: "Full-time",
+    description: ""
+  });
+
+  if (jobMatchesPreferences) {
+    notify(
+      `New Job Alert! ${item.title} at ${item.company} matches your preferences.`
+    );
+  } else {
+    notify("Your job listing has been added.");
+  }
+}
+
 async function saveProfile(e) {
   e.preventDefault();
 
@@ -1276,6 +1305,7 @@ setShowProfile(false);
               <label>
                 Category
                 <select
+
                   value={form.category}
                   onChange={e =>
                     setForm({ ...form, category: e.target.value })
